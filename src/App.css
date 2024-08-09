@@ -1,0 +1,25 @@
+
+body{
+  margin: 0;
+  pad: 0;
+  box-sizing: border-box;
+  background-color: rgb(58, 43, 43);
+}
+#container{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+.c1{
+  background-color: rgb(9, 9, 173);
+  height: 40vh;
+  width: 200px;
+  border-radius: 5px;
+  
+}
+#userinput{
+  width: max-content;
+  outline: none;
+  border: none;
+}
