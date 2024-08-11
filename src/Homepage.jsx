@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import './App.css';
+import { addDoc, collection, getDocs } from "firebase/firestore";
+import { firestore } from './firebase';
 
 export default function HomePage() {
     const [button, setButton] = useState(true);
@@ -9,8 +11,11 @@ export default function HomePage() {
     const [feedback, setFeedback] = useState('');
     const [attempts, setAttempts] = useState(0);
     const [userName, setUserName] = useState('');
+    const [results, setResults] = useState([]);
+    const [showResults, setShowResults] = useState(false);
 
     const startGame = () => {
+        setShowResults(false)
         const name = prompt("Please enter your name");
         if (!name) {
             alert("Name cannot be empty. Please enter your name.");
@@ -31,7 +36,7 @@ export default function HomePage() {
         for (let i = 0; i < 4; i++) {
             const randomIndex = Math.floor(Math.random() * numArray.length);
             num += numArray[randomIndex];
-            numArray.splice(randomIndex, 1); // Remove the used digit from the array
+            numArray.splice(randomIndex, 1);
         }
 
         setGeneratedNumber(num);
@@ -63,7 +68,35 @@ export default function HomePage() {
 
         if (result === '++++') {
             alert(`Congratulations, ${userName}! You guessed the number in ${attempts + 1} attempts.`);
+            saveResult();
             resetGame();
+        }
+    };
+
+    const saveResult = async () => {
+        try {
+            await addDoc(collection(firestore, "gameResults"), {
+                userName,
+                attempts,
+                timestamp: new Date(),
+            });
+            console.log("Game result saved successfully!");
+        } catch (error) {
+            console.error("Error saving game result: ", error);
+        }
+    };
+
+    const fetchResults = async () => {
+        try {
+            const querySnapshot = await getDocs(collection(firestore, "gameResults"));
+            const resultsData = [];
+            querySnapshot.forEach((doc) => {
+                resultsData.push(doc.data());
+            });
+            setResults(resultsData);
+            setShowResults(true);
+        } catch (error) {
+            console.error("Error fetching game results: ", error);
         }
     };
 
@@ -86,7 +119,10 @@ export default function HomePage() {
         <>
             <div id="container">
                 {button && (
-                    <button className="button" onClick={startGame}>Start a new game</button>
+                    <>
+                        <button className="button" onClick={startGame}>Start a new game</button>
+                        <button onClick={fetchResults}>Display Results</button>
+                    </>
                 )}
                 {gamestart && (
                     <div className="c1">
@@ -105,8 +141,23 @@ export default function HomePage() {
                         <button onClick={resetGame}>Start a New Game</button>
                     </div>
                 )}
+                {showResults && (
+                    <div className="results">
+                        <h2>Previous Game Results</h2>
+                        {results.length > 0 ? (
+                            <ul>
+                                {results.map((result, index) => (
+                                    <li key={index}>
+                                        <strong>Name:</strong> {result.userName}, <strong>Attempts:</strong> {result.attempts}, <strong>Date:</strong> {new Date(result.timestamp.seconds * 1000).toLocaleString()}
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p>No game results found.</p>
+                        )}
+                    </div>
+                )}
             </div>
         </>
     );
 }
- 
